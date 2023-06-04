@@ -702,7 +702,7 @@ class PPOTrainer(BaseTrainer):
 
         t = time.time()
         rewards, non_score_reward = self.compute_rewards(
-            scores, all_logprobs, ref_logprobs, masks
+            scores, all_logprobs, ref_logprobs, masks, uncertainties
         )
         timing["time/ppo/compute_rewards"] = time.time() - t
 
