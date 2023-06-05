@@ -209,7 +209,7 @@ for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
     model_outputs = model(input_ids=texts)
     rewards = [torch.tensor(output.logits[0]) for output in model_outputs]
 
-    cls_token_layer = model_outputs.last_hidden_state[:, 0, :]
+    cls_token_layer = model_outputs.last_hidden_state.mean(dim=1)
     uncertainties = uncertainty_model.uncertainty(cls_token_layer)
 
     # Run PPO step

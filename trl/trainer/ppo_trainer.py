@@ -541,6 +541,7 @@ class PPOTrainer(BaseTrainer):
         queries: List[torch.LongTensor],
         responses: List[torch.LongTensor],
         scores: List[torch.FloatTensor],
+        uncertainties: List[torch.FloatTensor],
     ):
         """
         Check if the input data is valid for training.
@@ -558,7 +559,7 @@ class PPOTrainer(BaseTrainer):
             `tuple`: The input processed data.
         """
         for name, tensor_list in zip(
-            ["queries", "responses", "scores"], [queries, responses, scores]
+            ["queries", "responses", "scores", "uncertainty"], [queries, responses, scores, uncertainties]
         ):
             if not isinstance(tensor_list, list):
                 raise ValueError(
@@ -577,6 +578,7 @@ class PPOTrainer(BaseTrainer):
         queries = [tensor.to(self.current_device) for tensor in queries]
         responses = [tensor.to(self.current_device) for tensor in responses]
         scores = [tensor.to(self.current_device) for tensor in scores]
+        uncertainties = [tensor.to(self.current_device) for tensor in uncertainties]
 
         # squeeze scores if needed
         for i, score in enumerate(scores):
@@ -587,7 +589,16 @@ class PPOTrainer(BaseTrainer):
             elif score.dim() == 1:
                 scores[i] = score.squeeze()
 
-        return queries, responses, scores
+        # squeeze uncertainties if needed
+        for i, uncertainty in enumerate(uncertainties):
+            if uncertainty.dim() > 1:
+                raise ValueError(
+                    f"Scores must be 1-dimensional - got {uncertainty.dim()} for {uncertainty}"
+                )
+            elif uncertainty.dim() == 1:
+                uncertainty[i] = uncertainty.squeeze()
+
+        return queries, responses, scores, uncertainties
 
     @PPODecorators.empty_cuda_cache()
     def step(
@@ -616,8 +627,8 @@ class PPOTrainer(BaseTrainer):
         """
         bs = self.config.batch_size
 
-        queries, responses, scores = self._step_safety_checker(
-            bs, queries, responses, scores
+        queries, responses, scores, uncertainties = self._step_safety_checker(
+            bs, queries, responses, scores, uncertainties
         )
 
         # if we want to push best model to the hub
@@ -1081,7 +1092,7 @@ class PPOTrainer(BaseTrainer):
             # compute KL penalty (from difference in logprobs)
             kl = logprob - ref_logprob
             non_score_reward = -self.kl_ctl.value * kl
-            non_score_reward = -self.uncertainty_ctl * uncertainty
+            non_score_reward -= self.uncertainty_ctl * uncertainty
 
             non_score_rewards.append(non_score_reward)
             reward = non_score_reward.clone()

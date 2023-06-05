@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class JuryNet(nn.Module):
     def __init__(
@@ -50,7 +51,7 @@ class JuryNet(nn.Module):
         pred = self.forward(input)
         return self.get_discourse(pred, discourse_type=discourse_type)
 
-    def loss(self, preds, labels):
+    def loss(self, preds:torch.tensor, labels):
         """
         labels: [batch_size, 1]
         preds: [batch_size, num_juries]
