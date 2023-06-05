@@ -176,7 +176,7 @@ if ppo_trainer.accelerator.num_processes == 1:
 model = DistilBertModel.from_pretrained(
     "lvwerra/distilbert-imdb", output_hidden_states=True
 ).to(device)
-uncertainty_model = JuryNet(128)
+uncertainty_model = JuryNet(128)  # TODO from pretrained
 
 # We then define the arguments to pass to the `generate` function. These arguments
 # are passed to the `generate` function of the PPOTrainer, which is a wrapper around
