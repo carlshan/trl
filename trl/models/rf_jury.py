@@ -40,7 +40,7 @@ class RandomForestUncertainty:
       
       # Convert list of numpy arrays to a single 3D PyTorch tensor
       # Tensor shape should be (500, # data, 2)
-      predictions_tensor = torch.tensor(rf_tree_predictions, device=self.device)
+      predictions_tensor = torch.tensor(np.array(rf_tree_predictions), device=self.device)
       # Calculate variance along the 0th dimension (i.e., across the 500 decision trees)
       uncertainty = predictions_tensor.std(dim=0)
       uncertainty = uncertainty[:, 0]
